@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import { cn } from "@/lib/utils";
@@ -102,6 +102,7 @@ const navItems: NavItem[] = [
 ];
 
 const roleLabels: Record<UserRole, string> = {
+  SUPER_ADMIN: "Super Admin",
   ADMIN: "Administrator",
   REGISTRAR: "Registrar",
   DEPARTMENT_HEAD: "Department Head",
@@ -115,7 +116,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { isOpen, isCollapsed, toggle, toggleCollapse } = useSidebarStore();
   const role = useAuthStore((state) => state.role);
-  const { user } = useAuth();
+  const { user } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const filteredNav = navItems.filter((item) =>
