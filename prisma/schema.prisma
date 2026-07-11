@@ -1,0 +1,355 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  REGISTRAR
+  DEPARTMENT_HEAD
+  FACULTY
+  ADVISOR
+  BURSAR
+  STUDENT
+}
+
+enum StudentStatus {
+  PROVISIONAL  // enrolled, payment pending
+  ACTIVE       // fully enrolled & paid
+  SUSPENDED    // financial hold
+  ALUMNI       // graduated
+}
+
+enum Semester {
+  FALL
+  SPRING
+  SUMMER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  DROPPED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum AssignmentStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+  OVERDUE
+}
+
+enum PaymentType {
+  TUITION
+  FEE
+  FINE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ─── Core Models ──────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String
+  lastName  String
+  avatar    String?
+  role      UserRole @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  studentProfile   StudentProfile?
+  facultyProfile   FacultyProfile?
+  departmentHead   Department?       @relation("DepartmentHead")
+  advisorStudents  StudentProfile[]  @relation("StudentAdvisor")
+  noticesToAuthor  Notice[]          @relation("NoticeAuthor")
+  auditLogs        AuditLog[]
+
+  @@index([clerkId])
+  @@index([email])
+  @@index([role])
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  headId      String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  head            User?            @relation("DepartmentHead", fields: [headId], references: [id])
+  courses         Course[]
+  studentProfiles StudentProfile[]
+  facultyProfiles FacultyProfile[]
+
+  @@index([code])
+}
+
+model StudentProfile {
+  id          String        @id @default(cuid())
+  userId      String        @unique
+  studentId   String        @unique // auto-generated e.g. STU-2024-0001
+  status      StudentStatus @default(PROVISIONAL)
+  departmentId String?
+  advisorId   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department  Department?  @relation(fields: [departmentId], references: [id])
+  advisor     User?        @relation("StudentAdvisor", fields: [advisorId], references: [id])
+  enrollments Enrollment[]
+  payments    Payment[]
+  submissions Submission[]
+
+  @@index([userId])
+  @@index([studentId])
+  @@index([status])
+  @@index([departmentId])
+}
+
+model FacultyProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  facultyId    String   @unique // auto-generated e.g. FAC-2024-0001
+  designation  String?  // e.g. "Associate Professor"
+  departmentId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department  Department? @relation(fields: [departmentId], references: [id])
+  courses     Course[]
+
+  @@index([userId])
+  @@index([departmentId])
+}
+
+model Course {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  description  String?
+  credits      Int      @default(3)
+  departmentId String?
+  facultyId    String?
+  semester     Semester @default(FALL)
+  academicYear String   // e.g. "2024/2025"
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  department     Department?      @relation(fields: [departmentId], references: [id])
+  faculty        FacultyProfile?  @relation(fields: [facultyId], references: [id])
+  enrollments    Enrollment[]
+  assignments    Assignment[]
+  timetableSlots TimetableSlot[]
+
+  @@index([departmentId])
+  @@index([facultyId])
+  @@index([semester, academicYear])
+}
+
+model Enrollment {
+  id           String           @id @default(cuid())
+  studentId    String
+  courseId     String
+  semester     Semester
+  academicYear String
+  status       EnrollmentStatus @default(ACTIVE)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  // Relations
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course      Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
+  grade       Grade?
+
+  @@unique([studentId, courseId, semester, academicYear])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([status])
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  enrollmentId String
+  date         DateTime         @db.Date
+  status       AttendanceStatus @default(PRESENT)
+  note         String?
+  createdAt    DateTime         @default(now())
+
+  // Relations
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, date])
+  @@index([enrollmentId])
+  @@index([date])
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  dueDate     DateTime
+  totalMarks  Int      @default(100)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@index([courseId])
+  @@index([dueDate])
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  assignmentId String
+  studentId    String
+  fileUrl      String?
+  submittedAt  DateTime         @default(now())
+  status       AssignmentStatus @default(SUBMITTED)
+  marks        Int?
+  feedback     String?
+  gradedAt     DateTime?
+
+  // Relations
+  assignment Assignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+}
+
+model Grade {
+  id           String    @id @default(cuid())
+  enrollmentId String    @unique
+  midterm      Float?
+  final        Float?
+  total        Float?
+  letterGrade  String?   // A, B, C, D, F
+  gradePoints  Float?    // 4.0, 3.0, etc.
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId])
+}
+
+model TimetableSlot {
+  id        String   @id @default(cuid())
+  courseId  String
+  dayOfWeek Int      // 0=Mon, 1=Tue, ... 4=Fri
+  startTime String   // "09:00"
+  endTime   String   // "10:30"
+  room      String?
+  building  String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  studentId             String
+  amount                Int           // in kobo (Nigerian currency smallest unit)
+  currency              String        @default("NGN")
+  stripePaymentIntentId String?       @unique
+  type                  PaymentType   @default(TUITION)
+  status                PaymentStatus @default(PENDING)
+  semester              Semester
+  academicYear          String
+  description           String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  // Relations
+  student StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+}
+
+model Notice {
+  id          String     @id @default(cuid())
+  title       String
+  content     String
+  authorId    String
+  targetRoles UserRole[]
+  isPinned    Boolean    @default(false)
+  priority    String     @default("MEDIUM") // HIGH, MEDIUM, LOW
+  publishedAt DateTime   @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  author User @relation("NoticeAuthor", fields: [authorId], references: [id])
+
+  @@index([authorId])
+  @@index([publishedAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // e.g. GRADE_PUBLISHED, USER_CREATED, HOLD_PLACED
+  entity    String   // e.g. Course, User, Student
+  entityId  String
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
