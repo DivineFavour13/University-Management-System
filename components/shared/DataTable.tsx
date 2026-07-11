@@ -139,7 +139,9 @@ export function DataTable<TData>({
                         className="px-4 py-3 text-sm text-foreground"
                       >
                         {cell.column.columnDef.cell
-                          ? cell.column.columnDef.cell(cell.getContext())
+                          ? typeof cell.column.columnDef.cell === 'function'
+                            ? cell.column.columnDef.cell(cell.getContext())
+                            : cell.column.columnDef.cell
                           : cell.getValue()?.toString()}
                       </td>
                     ))}
