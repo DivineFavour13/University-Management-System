@@ -43,16 +43,18 @@ interface NavItem {
   roles: UserRole[];
 }
 
+const adminRoles: UserRole[] = ["SUPER_ADMIN", "ADMIN"];
+
 const navItems: NavItem[] = [
   // Admin
-  { label: "Dashboard", href: "/dashboard/admin", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["ADMIN"] },
-  { label: "Users", href: "/dashboard/admin/users", icon: <Users className="h-5 w-5" />, roles: ["ADMIN"] },
-  { label: "Departments", href: "/dashboard/admin/departments", icon: <Building2 className="h-5 w-5" />, roles: ["ADMIN"] },
-  { label: "Courses", href: "/dashboard/admin/courses", icon: <BookOpen className="h-5 w-5" />, roles: ["ADMIN"] },
-  { label: "Notices", href: "/dashboard/admin/notices", icon: <Megaphone className="h-5 w-5" />, roles: ["ADMIN"] },
-  { label: "Reports", href: "/dashboard/admin/reports", icon: <BarChart3 className="h-5 w-5" />, roles: ["ADMIN"] },
-  { label: "Audit Log", href: "/dashboard/admin/audit", icon: <ClipboardList className="h-5 w-5" />, roles: ["ADMIN"] },
-  { label: "Settings", href: "/dashboard/admin/settings", icon: <Settings className="h-5 w-5" />, roles: ["ADMIN"] },
+  { label: "Dashboard", href: "/dashboard/admin", icon: <LayoutDashboard className="h-5 w-5" />, roles: adminRoles },
+  { label: "Users", href: "/dashboard/admin/users", icon: <Users className="h-5 w-5" />, roles: adminRoles },
+  { label: "Departments", href: "/dashboard/admin/departments", icon: <Building2 className="h-5 w-5" />, roles: adminRoles },
+  { label: "Courses", href: "/dashboard/admin/courses", icon: <BookOpen className="h-5 w-5" />, roles: adminRoles },
+  { label: "Notices", href: "/dashboard/admin/notices", icon: <Megaphone className="h-5 w-5" />, roles: adminRoles },
+  { label: "Reports", href: "/dashboard/admin/reports", icon: <BarChart3 className="h-5 w-5" />, roles: adminRoles },
+  { label: "Audit Log", href: "/dashboard/admin/audit", icon: <ClipboardList className="h-5 w-5" />, roles: adminRoles },
+  { label: "Settings", href: "/dashboard/admin/settings", icon: <Settings className="h-5 w-5" />, roles: adminRoles },
 
   // Registrar
   { label: "Dashboard", href: "/dashboard/registrar", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["REGISTRAR"] },

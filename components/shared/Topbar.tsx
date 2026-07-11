@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAuth, useClerk } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -18,7 +18,7 @@ import {
 import { useTheme } from "next-themes";
 
 export function Topbar() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { signOut } = useClerk();
   const { theme, setTheme } = useTheme();
   const [searchOpen, setSearchOpen] = useState(false);
