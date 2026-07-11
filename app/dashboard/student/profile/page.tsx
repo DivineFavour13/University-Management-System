@@ -52,7 +52,7 @@ export default function StudentProfilePage() {
       <div className="text-primary mt-0.5">{icon}</div>
       <div>
         <p className="text-xs text-muted mb-0.5">{label}</p>
-        <p className="text-sm font-medium text-foreground">{value}</p>
+        <p className="text-sm font-medium text-foreground break-all">{value}</p>
       </div>
     </div>
   );
