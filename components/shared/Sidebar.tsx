@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,6 @@ import {
   CalendarDays,
   ClipboardCheck,
   Award,
-  Clock,
   Bell,
   CreditCard,
   UserCircle,
@@ -34,6 +33,7 @@ import {
   Menu,
   X,
   Shield,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
@@ -54,6 +54,7 @@ const navItems: NavItem[] = [
   { label: "Notices", href: "/dashboard/admin/notices", icon: <Megaphone className="h-5 w-5" />, roles: adminRoles },
   { label: "Reports", href: "/dashboard/admin/reports", icon: <BarChart3 className="h-5 w-5" />, roles: adminRoles },
   { label: "Audit Log", href: "/dashboard/admin/audit", icon: <ClipboardList className="h-5 w-5" />, roles: adminRoles },
+  { label: "Profile", href: "/dashboard/admin/profile", icon: <UserCircle className="h-5 w-5" />, roles: adminRoles },
   { label: "Settings", href: "/dashboard/admin/settings", icon: <Settings className="h-5 w-5" />, roles: adminRoles },
 
   // Registrar
@@ -116,9 +117,10 @@ const roleLabels: Record<UserRole, string> = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isOpen, isCollapsed, toggle, toggleCollapse } = useSidebarStore();
+  const { isCollapsed, toggleCollapse } = useSidebarStore();
   const role = useAuthStore((state) => state.role);
   const { user } = useUser();
+  const { signOut } = useClerk();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const filteredNav = navItems.filter((item) =>
@@ -195,7 +197,7 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* User Profile */}
+      {/* User Profile + Sign Out */}
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-medium text-sm">
@@ -207,16 +209,21 @@ export function Sidebar() {
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
-                className="overflow-hidden"
+                className="overflow-hidden flex-1 min-w-0"
               >
                 <p className="text-sm font-medium text-foreground truncate">
                   {user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User"}
                 </p>
                 {role && (
-                  <p className="text-xs text-muted">
-                    {roleLabels[role]}
-                  </p>
+                  <p className="text-xs text-muted">{roleLabels[role]}</p>
                 )}
+                <button
+                  onClick={() => signOut({ redirectUrl: "/sign-in" })}
+                  className="flex items-center gap-1 text-xs text-danger hover:underline mt-1"
+                >
+                  <LogOut className="h-3 w-3" />
+                  Sign Out
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
