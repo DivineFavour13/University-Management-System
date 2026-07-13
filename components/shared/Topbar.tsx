@@ -16,14 +16,33 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function Topbar() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const { theme, setTheme } = useTheme();
+  const role = useAuthStore((state) => state.role);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const profileHref =
+    role === "STUDENT"
+      ? "/dashboard/student/profile"
+      : role === "ADMIN" || role === "SUPER_ADMIN"
+      ? "/dashboard/admin/profile"
+      : role === "FACULTY"
+      ? "/dashboard/faculty/profile"
+      : role === "REGISTRAR"
+      ? "/dashboard/registrar/profile"
+      : role === "BURSAR"
+      ? "/dashboard/bursar/profile"
+      : role === "ADVISOR"
+      ? "/dashboard/advisor/profile"
+      : role === "DEPARTMENT_HEAD"
+      ? "/dashboard/department-head/profile"
+      : "/dashboard/admin/profile";
 
   const notifications = [
     { id: "1", title: "New enrollment request", time: "2 min ago", read: false },
@@ -164,7 +183,8 @@ export function Topbar() {
                   </div>
                   <div className="p-2">
                     <Link
-                      href="/dashboard/student/profile"
+                      href={profileHref}
+                      onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted hover:bg-secondary hover:text-foreground transition-colors"
                     >
                       <User className="h-4 w-4" />
