@@ -2,29 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import {
-  Search,
-  Bell,
-  Sun,
-  Moon,
-  User,
-  Settings,
-  LogOut,
-  ChevronDown,
-} from "lucide-react";
+import { Search, Bell, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function Topbar() {
   const { user } = useUser();
-  const { signOut } = useClerk();
   const { theme, setTheme } = useTheme();
   const role = useAuthStore((state) => state.role);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const profileHref =
@@ -80,11 +69,7 @@ export function Topbar() {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-muted hover:bg-secondary hover:text-foreground transition-colors"
           >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
           {/* Notifications */}
@@ -129,21 +114,14 @@ export function Topbar() {
                           )}
                         />
                         <div>
-                          <p className="text-sm text-foreground">
-                            {notification.title}
-                          </p>
-                          <p className="text-xs text-muted mt-0.5">
-                            {notification.time}
-                          </p>
+                          <p className="text-sm text-foreground">{notification.title}</p>
+                          <p className="text-xs text-muted mt-0.5">{notification.time}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                   <div className="border-t border-border p-3">
-                    <Link
-                      href="#"
-                      className="block text-center text-sm text-primary hover:underline"
-                    >
+                    <Link href="#" className="block text-center text-sm text-primary hover:underline">
                       View all notifications
                     </Link>
                   </div>
@@ -152,63 +130,18 @@ export function Topbar() {
             </AnimatePresence>
           </div>
 
-          {/* User Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2 rounded-lg p-2 text-muted hover:bg-secondary hover:text-foreground transition-colors"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary font-medium text-sm">
-                {user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0]?.toUpperCase() || "U"}
-              </div>
-              <ChevronDown className="h-4 w-4 hidden sm:block" />
-            </button>
-
-            <AnimatePresence>
-              {userMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-surface shadow-xl overflow-hidden"
-                >
-                  <div className="border-b border-border p-4">
-                    <p className="font-medium text-foreground">
-                      {user?.firstName || "User"} {user?.lastName || ""}
-                    </p>
-                    <p className="text-xs text-muted truncate">
-                      {user?.emailAddresses?.[0]?.emailAddress || ""}
-                    </p>
-                  </div>
-                  <div className="p-2">
-                    <Link
-                      href={profileHref}
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                      <User className="h-4 w-4" />
-                      Profile
-                    </Link>
-                    <Link
-                      href="#"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                      <Settings className="h-4 w-4" />
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => signOut({ redirectUrl: "/" })}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger hover:bg-danger/10 transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sign Out
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          {/* Avatar → Profile link */}
+          <Link
+            href={profileHref}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-primary font-medium text-sm hover:ring-2 hover:ring-primary/50 transition-all overflow-hidden"
+            title="View Profile"
+          >
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt="avatar" className="h-9 w-9 rounded-full object-cover" />
+            ) : (
+              user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0]?.toUpperCase() || "U"
+            )}
+          </Link>
         </div>
       </div>
 

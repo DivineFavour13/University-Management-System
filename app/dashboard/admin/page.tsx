@@ -1,66 +1,151 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatsCard } from "@/components/shared/StatsCard";
-import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { EmptyState } from "@/components/shared/EmptyState";
-import type { ColumnDef } from "@tanstack/react-table";
-import { Users, BookOpen, Building2, GraduationCap, Activity, ArrowRight } from "lucide-react";
+import { Users, BookOpen, Building2, GraduationCap, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { getAdminStats } from "@/actions/admin";
 
-const stats = [
-  { title: "Total Students", value: 1247, icon: <GraduationCap className="h-5 w-5" />, trend: "up" as const, trendValue: "+12% this year" },
-  { title: "Total Faculty", value: 89, icon: <Users className="h-5 w-5" />, trend: "up" as const, trendValue: "+3 new hires" },
-  { title: "Active Courses", value: 156, icon: <BookOpen className="h-5 w-5" />, trend: "neutral" as const, trendValue: "Spring 2026" },
-  { title: "Departments", value: 12, icon: <Building2 className="h-5 w-5" />, trend: "neutral" as const, trendValue: "No change" },
-];
-
-interface ActivityItem {
+type AuditLog = {
   id: string;
-  user: string;
   action: string;
-  target: string;
-  time: string;
-}
+  entity: string;
+  entityId: string;
+  createdAt: Date;
+  user: { firstName: string; lastName: string };
+};
 
-const activities: ActivityItem[] = [
-  { id: "1", user: "Dr. Sarah Chen", action: "published grades for", target: "MATH301", time: "2 min ago" },
-  { id: "2", user: "Registrar Office", action: "enrolled student in", target: "CS201", time: "15 min ago" },
-  { id: "3", user: "Admin", action: "created new course", target: "AI Ethics (CS450)", time: "1 hour ago" },
-  { id: "4", user: "Bursar Office", action: "processed payment for", target: "STU-2024-001", time: "2 hours ago" },
-  { id: "5", user: "Dr. James Wilson", action: "marked attendance for", target: "CS201", time: "3 hours ago" },
-];
-
-const columns: ColumnDef<ActivityItem>[] = [
-  { accessorKey: "user", header: "User" },
-  { accessorKey: "action", header: "Action" },
-  { accessorKey: "target", header: "Target" },
-  { accessorKey: "time", header: "Time" },
-];
+type Stats = {
+  totalStudents: number;
+  totalFaculty: number;
+  totalCourses: number;
+  totalDepartments: number;
+  recentAuditLogs: AuditLog[];
+};
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getAdminStats()
+      .then(setStats)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="space-y-8">
       <PageHeader title="Admin Dashboard" description="System overview and key metrics" />
 
+      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, i) => (
-          <StatsCard key={i} {...stat} delay={i * 0.1} />
-        ))}
+        <StatsCard
+          title="Total Students"
+          value={loading ? "—" : stats?.totalStudents ?? 0}
+          icon={<GraduationCap className="h-5 w-5" />}
+          trend="neutral"
+          trendValue="from database"
+        />
+        <StatsCard
+          title="Total Faculty"
+          value={loading ? "—" : stats?.totalFaculty ?? 0}
+          icon={<Users className="h-5 w-5" />}
+          trend="neutral"
+          trendValue="from database"
+        />
+        <StatsCard
+          title="Active Courses"
+          value={loading ? "—" : stats?.totalCourses ?? 0}
+          icon={<BookOpen className="h-5 w-5" />}
+          trend="neutral"
+          trendValue="from database"
+        />
+        <StatsCard
+          title="Departments"
+          value={loading ? "—" : stats?.totalDepartments ?? 0}
+          icon={<Building2 className="h-5 w-5" />}
+          trend="neutral"
+          trendValue="from database"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-2 rounded-xl border border-border bg-surface p-6">
+        {/* Recent Activity */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="lg:col-span-2 rounded-xl border border-border bg-surface p-6"
+        >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-foreground">Recent Activity</h3>
-            <Link href="/dashboard/admin/audit" className="text-sm text-primary hover:underline flex items-center gap-1">View All <ArrowRight className="h-4 w-4" /></Link>
+            <Link
+              href="/dashboard/admin/audit"
+              className="text-sm text-primary hover:underline flex items-center gap-1"
+            >
+              View All <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <DataTable columns={columns} data={activities} pageSize={5} />
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-12 bg-background rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : stats?.recentAuditLogs.length === 0 ? (
+            <div className="py-12 text-center text-muted text-sm">
+              No activity yet — actions taken in the system will appear here.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="border-b border-border">
+                <tr>
+                  {["User", "Action", "Entity", "Time"].map((h) => (
+                    <th key={h} className="pb-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {stats?.recentAuditLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-background/50 transition-colors">
+                    <td className="py-3 font-medium text-foreground">
+                      {log.user.firstName} {log.user.lastName}
+                    </td>
+                    <td className="py-3 text-muted">
+                      {log.action.replace(/_/g, " ")}
+                    </td>
+                    <td className="py-3">
+                      <StatusBadge status={log.entity} />
+                    </td>
+                    <td className="py-3 text-muted text-xs">
+                      {new Date(log.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="rounded-xl border border-border bg-surface p-6">
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="rounded-xl border border-border bg-surface p-6"
+        >
           <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
           <div className="space-y-2">
             {[
@@ -69,8 +154,11 @@ export default function AdminDashboard() {
               { label: "Post Announcement", href: "/dashboard/admin/notices" },
               { label: "View Reports", href: "/dashboard/admin/reports" },
             ].map((action) => (
-              <Link key={action.href} href={action.href}
-                className="flex items-center justify-between rounded-lg border border-border p-3 text-sm text-foreground hover:bg-secondary transition-colors">
+              <Link
+                key={action.href}
+                href={action.href}
+                className="flex items-center justify-between rounded-lg border border-border p-3 text-sm text-foreground hover:bg-secondary transition-colors"
+              >
                 {action.label}
                 <ArrowRight className="h-4 w-4 text-muted" />
               </Link>

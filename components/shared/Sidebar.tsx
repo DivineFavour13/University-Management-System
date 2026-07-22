@@ -54,7 +54,6 @@ const navItems: NavItem[] = [
   { label: "Notices", href: "/dashboard/admin/notices", icon: <Megaphone className="h-5 w-5" />, roles: adminRoles },
   { label: "Reports", href: "/dashboard/admin/reports", icon: <BarChart3 className="h-5 w-5" />, roles: adminRoles },
   { label: "Audit Log", href: "/dashboard/admin/audit", icon: <ClipboardList className="h-5 w-5" />, roles: adminRoles },
-  { label: "Profile", href: "/dashboard/admin/profile", icon: <UserCircle className="h-5 w-5" />, roles: adminRoles },
   { label: "Settings", href: "/dashboard/admin/settings", icon: <Settings className="h-5 w-5" />, roles: adminRoles },
 
   // Registrar
@@ -101,7 +100,7 @@ const navItems: NavItem[] = [
   { label: "Attendance", href: "/dashboard/student/attendance", icon: <ClipboardCheck className="h-5 w-5" />, roles: ["STUDENT"] },
   { label: "Fees", href: "/dashboard/student/fees", icon: <DollarSign className="h-5 w-5" />, roles: ["STUDENT"] },
   { label: "Notices", href: "/dashboard/student/notices", icon: <Bell className="h-5 w-5" />, roles: ["STUDENT"] },
-  { label: "Profile", href: "/dashboard/student/profile", icon: <UserCircle className="h-5 w-5" />, roles: ["STUDENT"] },
+
 ];
 
 const roleLabels: Record<UserRole, string> = {
